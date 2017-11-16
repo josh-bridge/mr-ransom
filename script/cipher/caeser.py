@@ -8,22 +8,22 @@ class CaeserCipher:
     DECRYPT = 'decrypt'
     ENCRYPT = 'encrypt'
 
-    def __init__(self, message, key):
-        self.message = message
+    def __init__(self, key, mode):
         self.key = key
+        self.mode = mode
 
-    def process(self, mode):
+    def process(self, message):
         # stores the encrypted/decrypted form of the message
         translated = ''
 
         # run the encryption/decryption code on each symbol in the message string
-        for char in self.message:
+        for char in message:
             if char in self.VALID_LETTERS:
                 # get the encrypted (or decrypted) number for this symbol
                 num = self.VALID_LETTERS.find(char)  # get the number of the symbol
-                if mode == self.ENCRYPT:
+                if self.mode == self.ENCRYPT:
                     num = num + self.key
-                elif mode == self.DECRYPT:
+                elif self.mode == self.DECRYPT:
                     num = num - self.key
 
                 # handle the wrap-around if num is larger than the length of
@@ -41,9 +41,3 @@ class CaeserCipher:
                 translated = translated + char
 
         return translated
-
-    def encrypt(self):
-        return self.process(self.ENCRYPT)
-
-    def decrypt(self):
-        return self.process(self.DECRYPT)

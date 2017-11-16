@@ -4,6 +4,7 @@
     ".png",
     ".mp4",
     ".docx",
-    ".txt"
+    ".txt",
+    ".pdf"
   ]
 }

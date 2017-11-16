@@ -1,3 +1,7 @@
+/build
+/dist
+
 *.pyc
 *._*
 *.pwn
+MANIFEST

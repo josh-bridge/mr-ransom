@@ -1,0 +1,1 @@
+from .mrransom import MrRansom
