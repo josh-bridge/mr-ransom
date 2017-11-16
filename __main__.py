@@ -1,6 +1,6 @@
 import argparse
 
-from mrransom import MrRansom
+from script.mrransom import MrRansom
 
 
 class EncryptAction(argparse.Action):

