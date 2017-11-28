@@ -12,3 +12,7 @@ def read_chunks(file_stream):
         if not chunk:
             break
         yield chunk
+
+
+def write_chunk(file_stream, chunk):
+    file_stream.write(chunk)
