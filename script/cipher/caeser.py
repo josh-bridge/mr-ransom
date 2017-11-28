@@ -1,3 +1,4 @@
+# coding=utf-8
 # Caesar Cipher
 # http://inventwithpython.com/hacking (BSD Licensed)
 

