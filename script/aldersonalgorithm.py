@@ -28,3 +28,9 @@ class AldersonAlgorithm:
 
         return result
 
+    def encrypt_file(self, file_path, out_file_path):
+        pass
+
+    def decrypt_file(self, file_path, out_file_path):
+        pass
+

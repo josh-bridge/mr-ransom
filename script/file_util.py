@@ -15,4 +15,5 @@ def read_chunks(file_stream):
 
 
 def write_chunk(file_stream, chunk):
-    file_stream.write(chunk)
+    file_stream.write("".join(map(chr, chunk)))
+
