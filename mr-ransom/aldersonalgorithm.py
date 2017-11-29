@@ -1,6 +1,7 @@
 import base64
 
 from cipher.caeser import CaeserCipher
+from cipher.reverse import ReverseCipher
 
 ENCRYPT = 'encrypt'
 
@@ -8,19 +9,17 @@ DECRYPT = 'decrypt'
 
 
 def process(key, in_text, mode):
-    return CaeserCipher(key, mode).process(in_text)
+    step_1 = CaeserCipher(key).process(in_text, mode)
 
+    step_2 = ReverseCipher.process(step_1)
 
-def format_key(raw_key):
-    new_key = 0
-    for c in raw_key:
-        new_key = new_key ^ c
-    return new_key
+    return step_2
 
 
 class AldersonAlgorithm:
+
     def __init__(self, key):
-        self.key = format_key(key)
+        self.key = key
         self.previous = ""
 
     def encrypt_chunk(self, chunk):
@@ -34,4 +33,3 @@ class AldersonAlgorithm:
         self.previous = result
 
         return result
-
