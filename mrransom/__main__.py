@@ -7,7 +7,7 @@ import sys
 from mrransom import MrRansom
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog='mr-ransom', description='Mr. Ransom - Encrypts your precious files.')
+    parser = argparse.ArgumentParser(prog='mrransom', description='Mr. Ransom - Encrypts your precious files.')
     parser.add_argument('-m', '--mode', type=str, required=True, choices=['e', 'encrypt', 'd', 'decrypt'],
                         help='choose which process to complete')
     parser.add_argument('-d', '--dir', type=str, required=True, help='specify the base directory to process')

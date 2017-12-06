@@ -1,10 +1,10 @@
 from distutils.core import setup
 
 setup(
-    name='mr-ransom',
+    name='mrransom',
     version='0.1',
     packages=['', 'cipher'],
-    package_dir={'': 'mr-ransom'},
+    package_dir={'': 'mrransom'},
     package_data={'package': "data/"},
     url='https://github.com/josh-bridge',
     license='',

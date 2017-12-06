@@ -1,10 +1,9 @@
 import hashlib
 
 import os
-import random
 
-from cipher import cryptomath
 from file_util import put_file, get_file
+from cipher.reverse import ReverseCipher
 
 STATIC_KEY = "6l72xhpwZ9P3RjTHUi8vuq2hHP0dlaSz"
 
@@ -23,15 +22,15 @@ def get_md5(string):
 
 
 def create_key():
-    return Key(STATIC_KEY)
+    """Generate key"""
+    return Key(os.urandom(32))
 
 
-def get_random_key():
-    while True:
-        key_a = random.randint(2, len(SYMBOLS))
-        key_b = random.randint(2, len(SYMBOLS))
-        if cryptomath.gcd(key_a, len(SYMBOLS)) == 1:
-            return key_a * len(SYMBOLS) + key_b
+def caeser_key(key):
+    new_key = 0
+    for c in key.ints:
+        new_key = new_key ^ c
+    return new_key
 
 
 def get_key_file(root_dir):
