@@ -8,21 +8,67 @@ ENCRYPT = 'encrypt'
 DECRYPT = 'decrypt'
 
 
+def caeser(message, key, mode):
+    return CaeserCipher(locksmith.caeser_key(key)).process(message, mode)
+
+
+def reverse(message):
+    return ReverseCipher.process(message)
+
+
+def vernam(message, key):
+    return VernamCipher(key.string).process(message)
+
+
+def get_blocks(message, n=4):
+    return [message[i:i+n] for i in range(0, len(message), n)]
+
+
+def encrypt_block(message, key):
+    step_1 = caeser(message, key, ENCRYPT)
+
+    step_2 = reverse(step_1)
+
+    return vernam(step_2, key)
+
+
+def decrypt_block(message, key):
+    step_1 = vernam(message, key)
+
+    step_2 = reverse(step_1)
+
+    return caeser(step_2, key, DECRYPT)
+
+
 class AldersonAlgorithm:
 
     def __init__(self, key):
         self.key = key
 
     def encrypt(self, message):
-        step_1 = CaeserCipher(locksmith.caeser_key(self.key)).process(message, ENCRYPT)
+        message_blocks = get_blocks(message)
+        encrypted = []
+        key = self.key
 
-        step_2 = ReverseCipher.process(step_1)
+        for i in range(len(message_blocks)):
+            block = encrypt_block(message_blocks[i], key)
+            encrypted.append(block)
 
-        return VernamCipher(self.key.string).process(step_2)
+            if i > 0:
+                key = locksmith.rotate_key(key, block)
+
+        return ''.join(encrypted)
 
     def decrypt(self, message):
-        step_1 = VernamCipher(self.key.string).process(message)
+        message_blocks = get_blocks(message)
+        decrypted = []
+        key = self.key
 
-        step_2 = ReverseCipher.process(step_1)
+        for i in range(len(message_blocks)):
+            block = message_blocks[i]
+            decrypted.append(decrypt_block(block, key))
 
-        return CaeserCipher(locksmith.caeser_key(self.key)).process(step_2, DECRYPT)
+            if i > 0:
+                key = locksmith.rotate_key(key, block)
+
+        return ''.join(decrypted)

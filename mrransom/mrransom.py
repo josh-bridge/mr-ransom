@@ -1,11 +1,10 @@
 import json
 import os
-import time
 import sys
-import locksmith
 
-from file_util import read_chunks, get_file, write_chunk, put_file, get_file_bytes, get_file_bytes_e64, put_file_d64
+import locksmith
 from aldersonalgorithm import AldersonAlgorithm
+from file_util import get_file, put_file, get_file_bytes_e64, put_file_d64
 
 ENCRYPT = 'encrypt'
 

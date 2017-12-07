@@ -23,7 +23,7 @@ def get_md5(string):
 
 def create_key():
     """Generate key"""
-    return Key(os.urandom(32))
+    return Key.from_string(os.urandom(32))
 
 
 def caeser_key(key):
@@ -43,7 +43,7 @@ def get_key_file(root_dir):
     if not os.path.exists(hash_file_path):
         raise Exception('No hash file found, cannot decrypt.')
 
-    key = Key(get_file(key_file_path))
+    key = Key.from_string(get_file(key_file_path))
     stored_hash = get_file(hash_file_path)
 
     if key.md5 != stored_hash:
@@ -60,9 +60,28 @@ def export_key_file(root_dir, key):
     put_file(os.path.join(root_dir, KEY_HASH_FILE), key.md5)
 
 
+def rotate_key(key, block):
+    block_ints = map(ord, block)
+
+    if len(block_ints) >= len(key.ints):
+        return Key.from_ints(block_ints[:len(key.ints)])
+    else:
+        new_key_ints = key.ints[len(block_ints):] + block_ints
+
+        return Key.from_ints(new_key_ints)
+
+
 class Key:
 
-    def __init__(self, string):
+    def __init__(self, string, ints):
         self.string = string
-        self.ints = map(ord, string)
+        self.ints = ints
         self.md5 = get_md5(string).hexdigest()
+
+    @classmethod
+    def from_string(cls, string):
+        return cls(string, map(ord, string))
+
+    @classmethod
+    def from_ints(cls, ints):
+        return cls(''.join(map(chr, ints)), ints)

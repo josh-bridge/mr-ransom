@@ -9,13 +9,6 @@ def get_file(file_path):
     return content
 
 
-def get_file_bytes(file_path):
-    content = []
-    for chunk in read_chunks(open(file_path, "rb")):
-        content.append(chunk)
-    return content
-
-
 def get_file_bytes_e64(file_path):
     content = []
     for chunk in read_chunks(open(file_path, "rb")):
