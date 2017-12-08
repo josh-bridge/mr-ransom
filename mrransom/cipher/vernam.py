@@ -7,7 +7,7 @@ class VernamCipher:
         result = ""
         ptr = 0
         for char in text:
-            result = result + chr(ord(char) ^ ord(self.key[ptr]))
+            result += chr(ord(char) ^ ord(self.key[ptr]))
             ptr = ptr + 1
             if ptr == len(self.key):
                 ptr = 0

