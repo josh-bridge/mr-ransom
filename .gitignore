@@ -6,3 +6,5 @@
 *.pwn
 MANIFEST
 .idea/
+.DS_Store
+*.synctex.gz
