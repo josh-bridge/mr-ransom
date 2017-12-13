@@ -31,16 +31,19 @@
 
 \section{Ransomware review}
   \subsection{CryptoWall}
-    CryptoWall was one of the largest ransomwares in recent years, with its highest popularity in 2014. Losses as a result of CryptoWall attacks in 2014 alone totalled around \$14 million \citep{fbi2014cryptowall}
+    CryptoWall is distributed most commonly with spam emails and malicious ad campaigns (or ‘malvertising’) using an archive file containing a method for downloading the payload \citep{symantec2016cryptowall}. The main attack vector used in this method is that the archive file conained a ‘.chm’ (a Microsoft Compiled HTML Help file) file which would then download the malware payload and run it on the target machine, encrypting many file types using AES encryption, then encrypting the key using RSA \citep{sophos2015cryptowall}.
+
   \subsection{Petya and Mischa}
-    Ransomware-as-a-service (RaaS)
+    This ransomware duo is unique as it provides two methods of encryption. Typically distributed by spam email, it first tries to reboot the target machine and encrypt the entire hard drive rendering the computer unusable \citep{malwarebytes2016petya}. If this fails then a secondary method is used to encrypt on a file-by-file basis \citep{avast2016petya}.
 
   \subsection{Locky}
+    Locky commonly uses spam emails to distribute a ‘.docx’ file which contains a macro that the user is encouraged to enable, which downloads the payload. It encrypts most file types, and trawls any connected usb drives or network shares \citep{ducklin2016locky} and the encryption keys are generated on the C\&C server \citep{avast2017locky}.
 
   \subsection{Cerber}
-    Ransomware-as-a-service (Raas)
+    Cerber is well-known for its popularity as a Ransomware-as-a-service where anyone can download and deploy it \citep{barkly2017cerber}. Each installation is shipped with a key, meaning it is able to run without any contact to a C\&C server, and also appears to generate new keys for each file it encrypts \citep{malwarebytes2016cerber}.
 
-\newpage
+  \subsection{WannaCry}
+    WannaCry was probably the most publicised ransomware of recent history, mainly due to its distribution being able to spead to other computers on the same network without human involvment using an SMB flaw called ‘EternalBlue’ \citep{symnatec2017wannacry}.
 
 \section{Ransomware design}
 
